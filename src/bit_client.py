@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 
-# Copyright Daniel Wallin 2006. Use, modification and distribution is
-# subject to the Boost Software License, Version 1.0. (See accompanying
-# file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-
 from os import (sys, path)
 import argparse
 import libtorrent as lt
-from utils import add_suffix, progress_bar
+from utils import (add_suffix, progress_bar)
 
 
 if sys.platform == 'win32':
