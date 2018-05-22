@@ -6,12 +6,8 @@ import libtorrent as lt
 from utils import (add_suffix, progress_bar)
 
 
-if sys.platform == 'win32':
-    from windowsconsole import WindowsConsole
-    console = WindowsConsole()
-else:
-    from unixconsole import UnixConsole
-    console = UnixConsole()
+from unixconsole import UnixConsole
+console = UnixConsole()
 
 
 def load_arguments():
