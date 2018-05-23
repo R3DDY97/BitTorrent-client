@@ -14,6 +14,6 @@ $ git clone https://github.com/R3DDY97/BitTorrent-client
 
 cd  BitTorrent-client
 
-python bit_client.py <torrentfile> or <magnet-url>
+python client.py <torrentfile> or <magnet-url>
 
 ```
