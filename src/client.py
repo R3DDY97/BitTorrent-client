@@ -162,124 +162,29 @@ def handle_info(handle):
     sleep(1)
 
 
-# def main():
+def pause_session(session, handles):
 
-#     alerts = []
-#     display_info()
+    for handle in handles:
+        if not handle.is_valid() or not handle.has_metadata():
+            continue
+        data = lt.bencode(handle.write_resume_data())
+        filename = os.path.join(
+            handle.get_torrent_info().name() + '.fastresume')
+        with open(filename, 'wb') as fresume:
+            fresume.write(data)
 
-#     while True:
 
-#         while 1:
-#             a = ses.pop_alert()
-#             if not a:
-#                 break
-#             alerts.append(a)
+def main():
+    session, handles = torrent_handles()
+    while True:
+        try:
+            for handle in handles:
+                handle_info(handle)
 
-#         if len(alerts) > 8:
-#             alerts = alerts[-8:]
-
-#         for a in alerts:
-#             if isinstance(a, str):
-#                 write_line(console, a + '\n')
-#             else:
-#                 write_line(console, a.message() + '\n')
-
-#         c = console.sleep_and_input(0.5)
-
-#         if not c:
-#             continue
-
-#         elif c == 'r':
-#             for h in handles:
-#                 h.force_reannounce()
-#         elif c == 'q':
-#             raise SystemExit
-#         elif c == 'p':
-#             for h in handles:
-#                 h.pause()
-#         elif c == 'u':
-#             for h in handles:
-#                 h.resume()
-
-#     ses.pause()
-#     for h in handles:
-#         if not h.is_valid() or not h.has_metadata():
-#             continue
-#         data = lt.bencode(h.write_resume_data())
-#         filename = path.join(
-#             args.save_path, h.get_torrent_info().name() + '.fastresume')
-#         with open(filename, 'wb') as fresume:
-#             fresume.write(data)
+        except KeyboardInterrupt:
+            pause_session(session, handles)
+            os.sys.exit()
 
 
 if __name__ == "__main__":
-    display_info()
-    # main()
-
-
-# def append_out(args):
-#     cond, ok = args
-#     if cond:
-#         return ok
-#     return "."
-
-# def print_peer_info(console, peers):
-
-#     out = (' down    (total )   up     (total )  q  r flags'
-#            '   block progress  client\n')
-
-#     for p in peers:
-#         peer_params = [p.down_speed, p.total_download,
-#                        p.up_speed, p.total_upload]
-
-#         out += "{}/s {} {}/s {}".format(*map(add_suffix, peer_params))
-#         out += '{:2} {:2}'.format(p.download_queue_length,
-#                                   p.upload_queue_length)
-
-#         if p.flags:
-#             peer_items = [[peer_info.interesting, "I"],
-#                           [peer_info.choked, "C"],
-#                           [peer_info.remote_interested, "i"],
-#                           [peer_info.remote_choked, "c"],
-#                           [peer_info.supports_extensions, "e"]]
-#             out += map(append_out, peer_items)
-
-#             if lt.peer_info.local_connection:
-#                 out += 'l'
-#             else:
-#                 out += 'r'
-#         out += ' '
-
-#         if p.downloading_piece_index >= 0:
-#             assert(p.downloading_progress <= p.downloading_total)
-#             out += progress_bar(float(p.downloading_progress) /
-#                                 p.downloading_total, 15)
-#         else:
-#             out += progress_bar(0, 15)
-#         out += ' '
-
-#         if p.flags:
-#             if lt.peer_info.handshake:
-#                 id = 'waiting for handshake'
-#             elif lt.peer_info.connecting:
-#                 id = 'connecting to peer'
-#             elif lt.peer_info.queued:
-#                 id = 'queued'
-#         else:
-#             id = p.client
-
-#         out += '{}\n'.format(id[:10])
-
-#     write_line(console, out)
-
-
-# def print_download_queue(console, download_queue):
-
-#     out = ""
-#     state_dict = {1: "-", 2: "=", 3: "#"}
-#     for e in download_queue:
-#         out += '%4d: [' % e['piece_index']
-#         for block in e['blocks']:
-#             out += state_dict.get(block['state'], " ")
-#         out += ']\n'
-#     write_line(console, out)
+    main()
