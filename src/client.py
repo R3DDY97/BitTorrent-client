@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import os
-from time import sleep
-from select import select
 import argparse
+from time import sleep
 import libtorrent as lt
+from tabulate import tabulate
+from utils import b2mb, b2kb, is_magneturl
 
 
 def parse_arguments():
@@ -39,7 +40,7 @@ def parse_arguments():
     return args
 
 
-def load_arguments():
+def format_arguments():
     args = parse_arguments()
     args.max_upload_rate *= 1000
     args.max_download_rate *= 1000
@@ -64,8 +65,8 @@ def proxy_setup(proxy_host):
     return proxy_settings
 
 
-def torrent_handles():
-    args = load_arguments()
+def session_handles():
+    args = format_arguments()
     settings = lt.session_settings()
     settings.user_agent = 'python_client/' + lt.version
 
@@ -89,14 +90,6 @@ def torrent_handles():
     return session, handles
 
 
-def is_magneturl(torrent):
-    prefixes = ["magnet:", "http://", "https://"]
-    for prefix in prefixes:
-        if torrent.startswith(prefix):
-            return True
-    return False
-
-
 def session_torrents(torrent, save_path):
 
     torrent_dict = {"save_path": save_path, "paused": False,
@@ -116,54 +109,25 @@ def session_torrents(torrent, save_path):
         return torrent_dict
 
 
-def display_info():
-    session, handles = torrent_handles()
-    while True:
-        for handle in handles:
-            handle_info(handle)
-
-
-def b2kb(size):
-    kb = size / 10**3
-    return "{:.2f} KB".format(kb)
-
-
-def b2mb(size):
-    mb = size / 10**6
-    return "{:.2f} MB".format(mb)
-
-
 def handle_info(handle):
     # torrent_details = ["name", "total_size", "metadata", "files",
     #                    "creator", "creation_date", "trackers"]
-    os.system("clear")
-    if handle.has_metadata():
-        torrent_info = handle.get_torrent_info()
-        name, fsize = torrent_info.name(), b2mb(torrent_info.total_size())
-        status_info = "NAME: {} {}".format(name, fsize)
 
-    status = handle.status()
-    state = str(status.state)
-    # if state != 'seeding':
-    status_info += ('\nCompleted {:.2%} download  \nTotal downloaded: {} '
-                    'peers: {} \n'.format(status.progress,
-                                          b2mb(status.total_done),
-                                          status.num_peers))
+    torrent_info, status = handle.get_torrent_info(), handle.status()
+    state = str(status.state).upper()
+    name, fsize = torrent_info.name()[:20], b2mb(torrent_info.total_size())
+    progress = "{:.2%}".format(status.total_done/torrent_info.total_size())
+    status_list = [name, fsize, state, progress,
+                   b2mb(status.total_done), status.num_peers,
+                   "{}({})".format(b2kb(status.total_download),
+                                   b2kb(status.download_rate)),
+                   "{}({})".format(b2kb(status.total_upload),
+                                   b2kb(status.upload_rate))]
 
-    transfer_params = [status.download_rate, status.total_download,
-                       status.upload_rate, status.total_upload]
-
-    status_info += ('\ndownload: {0}/s ({1})  upload: {2}/s ({3})\n'
-                    ' '.format(*(map(b2kb, transfer_params))))
-    print(status_info)
-    print(state.upper())
-    if handle.get_download_queue():
-        print(handle.get_download_queue())
-    sleep(1)
+    return status_list
 
 
 def pause_session(session, handles):
-
     for handle in handles:
         if not handle.is_valid() or not handle.has_metadata():
             continue
@@ -175,15 +139,28 @@ def pause_session(session, handles):
 
 
 def main():
-    session, handles = torrent_handles()
+    session, handles = session_handles()
+    header = ['NAME', 'size', 'Status', 'Progress', 'Downloaded',
+              'peers', 'Downloading', 'Uploading']
     while True:
+        os.system("clear")
         try:
+            torrents_table = []
             for handle in handles:
-                handle_info(handle)
+                status_list = handle_info(handle)
+                torrents_table.append(status_list)
+            table = tabulate(torrents_table, headers=header,
+                             showindex="always", tablefmt="fancy_grid",
+                             missingval="?")
+            print(table)
+            sleep(1)
 
         except KeyboardInterrupt:
+            print("\nWait")
+            print("\nSaving Downloaded files to resume in the next session.\n")
             pause_session(session, handles)
-            os.sys.exit()
+            print("\nD0NE..")
+            raise SystemExit
 
 
 if __name__ == "__main__":
