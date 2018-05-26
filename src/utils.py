@@ -9,11 +9,21 @@ def is_magneturl(torrent):
     return False
 
 
-def b2kb(size):
-    kb = size / 10**3
-    return "{:.2f}KB".format(kb)
+def rate_size(size):
+    if size < 10**6:
+        rsize = size / 10**3
+        return "{:.2f}KB/s".format(rsize)
+    rsize = size / 10**6
+    return "{:.2f}MB/s".format(rsize)
 
 
-def b2mb(size):
-    mb = size / 10**6
-    return "{:.2f}MB".format(mb)
+def b2kmg(size):
+    if size < 10**6:
+        mb = size / 10**3
+        return "{:.2f}KB".format(mb)
+    elif size > 10**6 and size < 10**9:
+        mb = size / 10 ** 6
+        return "{:.2f}MB".format(mb)
+    elif size > 10 ** 9:
+        mb = size / 10 ** 9
+        return "{:.2f}GB".format(mb)

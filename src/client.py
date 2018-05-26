@@ -5,7 +5,7 @@ import argparse
 from time import sleep
 import libtorrent as lt
 from tabulate import tabulate
-from utils import b2mb, b2kb, is_magneturl
+from utils import b2kmg, rate_size, is_magneturl
 
 
 def parse_arguments():
@@ -95,6 +95,7 @@ def session_torrents(torrent, save_path):
     torrent_dict = {"save_path": save_path, "paused": False,
                     "storage_mode": lt.storage_mode_t.storage_mode_sparse,
                     "auto_managed": True, "duplicate_is_error": True}
+
     if is_magneturl(torrent):
         torrent_dict["url"] = torrent
     else:
@@ -115,14 +116,12 @@ def handle_info(handle):
 
     torrent_info, status = handle.get_torrent_info(), handle.status()
     state = str(status.state).upper()
-    name, fsize = torrent_info.name()[:20], b2mb(torrent_info.total_size())
+    name, fsize = torrent_info.name()[:20], b2kmg(torrent_info.total_size())
     progress = "{:.2%}".format(status.total_done/torrent_info.total_size())
     status_list = [name, fsize, state, progress,
-                   b2mb(status.total_done), status.num_peers,
-                   "{}({})".format(b2kb(status.total_download),
-                                   b2kb(status.download_rate)),
-                   "{}({})".format(b2kb(status.total_upload),
-                                   b2kb(status.upload_rate))]
+                   rate_size(status.total_done), status.num_peers,
+                   rate_size(status.download_rate),
+                   rate_size(status.upload_rate)]
 
     return status_list
 
